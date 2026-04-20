@@ -2,7 +2,7 @@ fastapi
 uvicorn
 httpx
 Pillow
-numpy
-tensorflow
+numpy==1.26.4
+tensorflow==2.15.0
 python-dotenv
 python-multipart
