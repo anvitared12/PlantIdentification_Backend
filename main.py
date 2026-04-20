@@ -3,7 +3,6 @@ load_dotenv()
 
 import os
 import io
-import numpy as np
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from PIL import Image
@@ -13,7 +12,7 @@ from plantnet import query_plantnet
 
 app = FastAPI(title="Plant Identification API")
 
-MODEL_PATH = os.getenv("MODEL_PATH", "plant_efficientnet_model.keras")
+MODEL_PATH = os.getenv("MODEL_PATH", "plant_model.tflite")
 CLASS_NAMES_PATH = os.getenv("CLASS_NAMES_PATH", "class_names.txt")
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.80"))
 
