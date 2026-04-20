@@ -13,50 +13,41 @@ from plantnet import query_plantnet
 
 app = FastAPI(title="Plant Identification API")
 
-MODEL_PATH = os.getenv("MODEL_PATH","Models/plant_identification_model.h5")
-
-CLASS_NAMES_PATH = os.getenv("CLASS_NAMES_PATH","class_names.txt")
-
-CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD","0.6"))
-
-MODEL_PATH = r"D:\OJT sem4\Backend\Models\plant_efficientnet_model.keras"
-CLASS_NAMES_PATH = "class_names.txt"
-CONFIDENCE_THRESHOLD = 0.80
+MODEL_PATH = os.getenv("MODEL_PATH", "plant_efficientnet_model.keras")
+CLASS_NAMES_PATH = os.getenv("CLASS_NAMES_PATH", "class_names.txt")
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.80"))
 
 model, class_names, img_size = load_keras_model(MODEL_PATH, CLASS_NAMES_PATH)
 
 @app.get("/health")
 def health():
-    return {"status":"ok", "model_loaded":model is not None}
-
+    return {"status": "ok", "model_loaded": model is not None}
 
 @app.post("/identify")
 async def identify_plant(file: UploadFile = File(...)):
-    if file.content_type not in ("image/jpeg", "image/png","image/webp"):
+    if file.content_type not in ("image/jpeg", "image/png", "image/webp"):
         raise HTTPException(status_code=400, detail="Unsupported image format.")
- 
+
     raw = await file.read()
-    if len(raw) > 10 * 1024 * 1024:   # 10 MB cap
+    if len(raw) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image too large (max 10 MB).")
- 
+
     try:
         image = Image.open(io.BytesIO(raw)).convert("RGB")
     except Exception:
         raise HTTPException(status_code=400, detail="Could not decode image.")
- 
+
     keras_result = predict_plant(model, class_names, image, img_size)
- 
+
     if keras_result["confidence"] >= CONFIDENCE_THRESHOLD:
         return JSONResponse({
             "source": "local_model",
             "plant_name": keras_result["plant_name"],
             "confidence": round(keras_result["confidence"], 4),
         })
- 
-    plantnet_result = await query_plantnet(raw, file.filename)
-    print("PlantNet Result:", plantnet_result)
-    # plantnet_result = await query_plantnet(raw, file.filename or "image.jpg")
- 
+
+    plantnet_result = await query_plantnet(raw, file.filename or "image.jpg")
+
     if plantnet_result:
         return JSONResponse({
             "source": "plantnet",
@@ -65,6 +56,5 @@ async def identify_plant(file: UploadFile = File(...)):
             "score": plantnet_result.get("score"),
             "local_model_confidence": round(keras_result["confidence"], 4),
         })
- 
+
     raise HTTPException(status_code=404, detail="Plant could not be identified.")
- 
